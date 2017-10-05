@@ -37,6 +37,12 @@ static struct thread *initial_thread;
 /* Lock used by allocate_tid(). */
 static struct lock tid_lock;
 
+/* slept or delayed threads */
+static struct list sleep_list;
+
+/* next tick to awake */
+static int64_t next_tick_to_awake;
+
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
   {
@@ -92,6 +98,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init(&sleep_thread)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -497,6 +504,70 @@ next_thread_to_run (void)
     return idle_thread;
   else
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
+}
+
+/* Fastest tick to awake */
+int64_t 
+get_next_tick_to_awake(void)
+{
+  return next_tick_to_awake;
+}
+
+void
+update_next_tick_to_awake(inte64_t ticks)
+{
+  next_tick_to_awake = (next_tick_to_awake > ticks) ? ticks : next_tick_to_awake;
+}
+
+/* Sleeps for approximately TICKS timer ticks. Idle thread
+   MUST NOT BE SLEPT.  */
+void
+thread_sleep(int64_t ticks)
+{
+  struct thread *cur;
+
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  cur = thread_current();
+
+  /* Idle thread isn't slept. */ 
+  ASSERT(cur != idle_thread);
+
+  cur->wakeup_tick = ticks;
+  update_next_tick_to_awake(ticks);
+
+  /* push current thread to sleep thread queue */
+  list_push_back(&sleep_thread, &cur->elem);
+
+  /* block current thread until get target tick */
+  thread_block();
+
+  intr_set_level(old_level);
+}
+
+void
+thread_awke(int64_t wakeup_tick)
+{
+  next_tick_to_awake = INT64_MAX;
+  struct list_elem *e;
+
+  e = list_begin(&sleep_list);
+  while(e != list_end(&sleep_list))
+    {
+      struct thread* t = list_entry(e, struct thread, elem);
+
+      if(wakeup_tick >= t->wakeup_tick)
+        {
+          e = list_remove(&t->elem);
+          thread_unblock(t);
+        }
+      else
+        {
+          e = list_next(e);
+          update_next_tick_to_awake(t->wakeup_tick);
+        }
+    }
 }
 
 /* Completes a thread switch by activating the new thread's page
