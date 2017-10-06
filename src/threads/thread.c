@@ -98,7 +98,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init(&sleep_thread)
+  list_init (&sleep_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -514,7 +514,7 @@ get_next_tick_to_awake(void)
 }
 
 void
-update_next_tick_to_awake(inte64_t ticks)
+update_next_tick_to_awake(int64_t ticks)
 {
   next_tick_to_awake = (next_tick_to_awake > ticks) ? ticks : next_tick_to_awake;
 }
@@ -538,7 +538,7 @@ thread_sleep(int64_t ticks)
   update_next_tick_to_awake(ticks);
 
   /* push current thread to sleep thread queue */
-  list_push_back(&sleep_thread, &cur->elem);
+  list_push_back(&sleep_list, &cur->elem);
 
   /* block current thread until get target tick */
   thread_block();
@@ -547,7 +547,7 @@ thread_sleep(int64_t ticks)
 }
 
 void
-thread_awke(int64_t wakeup_tick)
+thread_awake(int64_t wakeup_tick)
 {
   next_tick_to_awake = INT64_MAX;
   struct list_elem *e;
