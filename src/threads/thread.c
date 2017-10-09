@@ -216,6 +216,11 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  /* yield if current thread has lower priority then any ready 
+     threads */
+  if (check_priority_rule ())
+    thread_yield ();
+
   return tid;
 }
 
@@ -351,6 +356,11 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+
+  /* yield if current thread has lower priority then any ready 
+     threads */
+  if (check_priority_rule ())
+    thread_yield ();
 }
 
 /* Returns the current thread's priority. */
@@ -358,6 +368,17 @@ int
 thread_get_priority (void) 
 {
   return thread_current ()->priority;
+}
+
+/* Has first thread less priority then second one? */
+bool
+has_less_thread_priority (const sturct list_elem *a,
+                            const struct list_elem* b,
+                            void *aux UNUSED)
+{
+  return list_entry (a, struct thread, elem)->priority
+      <  list_entry (b, struct thread, elem)->priority;
+
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -492,6 +513,17 @@ alloc_frame (struct thread *t, size_t size)
   return t->stack;
 }
 
+/* If currnet thread has greatest priority in ready list, return 
+   true. Return false in other cases. */
+bool
+check_priority_rule ()
+{
+  struct liest_elem *e;
+  e = list_max (&ready_list, has_less_thread_priority, 0);
+
+  return thread_current ()->priority >= e->priority;
+}
+
 /* Chooses and returns the next thread to be scheduled.  Should
    return a thread from the run queue, unless the run queue is
    empty.  (If the running thread can continue running, then it
@@ -503,7 +535,15 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
+    {
+      struct liest_elem *e;
+      e = list_max (&ready_list, has_less_thread_priority, 0);
+
+      return e;
+    }
+  /* Original Code
     return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  */
 }
 
 /* Fastest tick to awake */

@@ -133,6 +133,9 @@ void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
+bool has_less_thread_priority (const sturct list_elem *a,
+                            const struct list_elem* b,
+                            void *aux UNUSED);
 
 int thread_get_nice (void);
 void thread_set_nice (int);
@@ -143,5 +146,7 @@ void thread_sleep(int64_t ticks);
 void thread_awake(int64_t ticks);
 int64_t get_next_tick_to_awake(void);
 void update_next_tick_to_awake(int64_t ticks);
+
+bool check_priority_rule ();
 
 #endif /* threads/thread.h */
