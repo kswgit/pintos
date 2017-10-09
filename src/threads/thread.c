@@ -372,7 +372,7 @@ thread_get_priority (void)
 
 /* Has first thread less priority then second one? */
 bool
-has_less_thread_priority (const sturct list_elem *a,
+has_less_thread_priority (const struct list_elem *a,
                             const struct list_elem* b,
                             void *aux UNUSED)
 {
@@ -518,10 +518,11 @@ alloc_frame (struct thread *t, size_t size)
 bool
 check_priority_rule ()
 {
-  struct liest_elem *e;
+  struct list_elem *e;
   e = list_max (&ready_list, has_less_thread_priority, 0);
 
-  return thread_current ()->priority >= e->priority;
+  return thread_current ()->priority 
+      >= list_entry (e, struct thread, elem)->priority;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -536,10 +537,10 @@ next_thread_to_run (void)
     return idle_thread;
   else
     {
-      struct liest_elem *e;
+      struct list_elem *e;
       e = list_max (&ready_list, has_less_thread_priority, 0);
 
-      return e;
+      return list_entry (e, struct thread, elem);
     }
   /* Original Code
     return list_entry (list_pop_front (&ready_list), struct thread, elem);

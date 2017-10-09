@@ -133,7 +133,7 @@ void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
-bool has_less_thread_priority (const sturct list_elem *a,
+bool has_less_thread_priority (const struct list_elem *a,
                             const struct list_elem* b,
                             void *aux UNUSED);
 
